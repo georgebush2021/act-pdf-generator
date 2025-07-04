@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Report: <%= fileName %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        @page {
+            size: A4;
+            margin: 12mm 8mm;
+        }
+
+        :root {
+            --primary: #d32f2f;
+            --primary-light: #ffebee;
+            --secondary: #c2185b;
+            --text-dark: #1a1a1a;
+            --text-medium: #4a2e38;
+            --text-light: #7b5e6a;
+            --bg-light: #fafafa;
+            --bg-white: #ffffff;
+            --border-light: #e0e0e0;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --accent: #ff6f61;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: var(--bg-white);
+            color: var(--text-dark);
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            font-size: 9.5pt;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            background-color: var(--bg-white);
+            padding: 4mm;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-with-logos {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5mm 0;
+        }
+
+        .logo {
+            max-height: 30mm;
+            width: auto;
+            mix-blend-mode: multiply;
+        }
+
+        header {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-bottom: 5mm;
+            margin-bottom: 0;
+            position: relative;
+            break-after: avoid;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 2.5px;
+            background-color: var(--primary);
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-size: 20pt;
+            color: var(--primary);
+            margin-bottom: 2.5mm;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: var(--text-dark);
+            margin-top: 5mm;
+            margin-bottom: 3.5mm;
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+            break-after: avoid;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -1.8mm;
+            left: 0;
+            width: 100%;
+            height: 0.7mm;
+            background-color: var(--primary);
+            border-radius: 0.7mm;
+        }
+
+        h3 {
+            font-size: 11pt;
+            color: var(--text-medium);
+            margin-top: 4mm;
+            margin-bottom: 2mm;
+            font-weight: 700;
+            break-after: avoid;
+        }
+
+        .competency-section {
+            padding: 3.5mm;
+            margin-bottom: 7mm;
+            background-color: var(--bg-white);
+        }
+
+        .competency-heading-group {
+            break-inside: avoid;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(28mm, 1fr));
+            gap: 2.5mm;
+            margin-bottom: 4.5mm;
+            break-inside: avoid;
+        }
+
+        .score-card {
+            background-color: var(--bg-light);
+            padding: 2mm;
+            border-radius: 1.8mm;
+            text-align: center;
+            font-size: 8pt;
+            font-weight: 400;
+            color: var(--text-medium);
+            border: 1px solid var(--border-light);
+            transition: transform 0.2s ease;
+        }
+
+        .score-card:hover {
+            transform: translateY(-1mm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .score-card .value {
+            font-size: 13pt;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 1mm;
+        }
+
+        .overall-score {
+            background-color: var(--primary-light);
+        }
+
+        .benchmark-container {
+            margin-top: 3.5mm;
+            margin-bottom: 5mm;
+            break-inside: avoid;
+        }
+
+        .benchmark-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1mm;
+            color: var(--text-medium);
+            font-size: 8pt;
+        }
+
+        .benchmark-bar {
+            background-color: var(--border-light);
+            border-radius: 0.8mm;
+            height: 2mm;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .benchmark-fill {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+            height: 100%;
+            border-radius: 0.8mm;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .metric-table-container {
+            break-inside: avoid;
+            margin-bottom: 5mm;
+        }
+
+        .metric-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2.5mm;
+            font-size: 7.8pt;
+        }
+
+        .metric-table th,
+        .metric-table td {
+            padding: 1.5mm 2mm;
+            text-align: left;
+            border: 1px solid var(--border-light);
+        }
+
+        .metric-table th {
+            background-color: var(--primary-light);
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .metric-table tr:nth-child(even) {
+            background-color: var(--bg-light);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin: 5mm auto;
+            background-color: var(--bg-white);
+            break-inside: avoid;
+            position: relative;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 6mm;
+            padding-top: 3mm;
+            color: var(--text-light);
+            font-size: 8pt;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .section-wrapper {
+            break-inside: avoid;
+        }
+
+        .page-break-point {
+            break-after: auto;
+        }
+
+        .force-page-break {
+            break-after: page;
+        }
+
+        p {
+            margin-bottom: 1.8mm;
+        }
+
+        h2,
+        h3 {
+            orphans: 3;
+            widows: 3;
+        }
+
+        /* Redesigned Radar Chart Section */
+        .radar-chart-section {
+            position: relative;
+            break-inside: avoid;
+            overflow: hidden;
+        }
+
+        .radar-chart-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .radar-chart-section .section-heading {
+            text-align: center;
+            margin-bottom: 5mm;
+            position: relative;
+            padding-bottom: 3mm;
+        }
+
+        .radar-chart-section .section-heading h2 {
+            font-size: 16pt;
+            font-weight: 700;
+            color: var(--text-dark);
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            padding: 2mm 0;
+            border-radius: 3mm;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .radar-chart-container {
+            width: 100%;
+            height: 700px;
+            margin: 4mm auto;
+            background: var(--bg-white);
+            border-radius: 3mm;
+            padding: 4mm;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+
+        .radar-chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(211, 47, 47, 0.05) 0%, transparent 80%);
+            z-index: 0;
+        }
+
+        .radar-chart-container canvas {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Redesigned Summary Section */
+        .summary-section {
+            margin: 12mm 0;
+            border-radius: 4mm;
+            position: relative;
+            break-inside: avoid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .summary-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .summary-section .section-heading {
+            text-align: center;
+            margin-bottom: 5mm;
+            position: relative;
+        }
+
+        .summary-section .section-heading h2 {
+            font-size: 16pt;
+            font-weight: 700;
+            color: var(--text-dark);
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 2mm 0;
+            border-radius: 3mm;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .summary-section .intro-text {
+            margin: 5mm 0;
+            padding: 4mm 6mm;
+            background-color: var(--bg-white);
+            border-left: 4px solid var(--primary);
+            border-radius: 2mm;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease;
+        }
+
+        .summary-section .intro-text:hover {
+            transform: translateX(2px);
+        }
+
+        .summary-section .intro-text p {
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 9pt;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .summary-container {
+            background: var(--bg-white);
+            border-radius: 3mm;
+            padding: 5mm;
+            margin-bottom: 5mm;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .summary-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .summary-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        .summary-container h3 {
+            font-size: 12pt;
+            color: var(--text-dark);
+            margin: 2mm 0 3mm 0;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .summary-table-container {
+            overflow-x: auto;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 8.5pt;
+            background: var(--bg-white);
+            border-radius: 2mm;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-table th,
+        .summary-table td {
+            padding: 2.5mm 3mm;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .summary-table th {
+            background: linear-gradient(90deg, var(--primary-light), var(--bg-light));
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .summary-table td {
+            color: var(--text-dark);
+        }
+
+        .summary-table .score {
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary);
+            background-color: var(--bg-light);
+            border-radius: 1.5mm;
+            padding: 1mm 3mm;
+            transition: background-color 0.2s ease;
+        }
+
+        .summary-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .summary-table tr:hover {
+            background-color: var(--primary-light);
+        }
+
+        .summary-table tr:hover .score {
+            background-color: var(--primary);
+            color: var(--bg-white);
+        }
+
+        /* Introduction Section Styling */
+        .introduction-section {
+            margin: 10mm 0 12mm 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5mm;
+            position: relative;
+        }
+
+        .intro-heading {
+            text-align: center;
+            margin-bottom: 6mm;
+            position: relative;
+        }
+
+        .intro-heading h2 {
+            font-size: 15pt;
+            color: var(--primary);
+            margin: 0;
+            padding: 2mm 0;
+            background-color: var(--bg-white);
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            border-radius: 2mm;
+        }
+
+        .intro-card {
+            background-color: var(--bg-white);
+            border-radius: 2mm;
+            padding: 4mm;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            break-inside: avoid;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .intro-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3mm;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            transform: skewY(-2deg);
+            z-index: 0;
+        }
+
+        .intro-card:hover {
+            transform: translateY(-1mm);
+            box-shadow: 0 3mm 6mm rgba(0, 0, 0, 0.12);
+        }
+
+        .intro-card h3 {
+            color: var(--text-dark);
+            margin-top: 2mm;
+            margin-bottom: 1.5mm;
+            font-size: 11pt;
+            position: relative;
+            z-index: 1;
+        }
+
+        .intro-card ul {
+            margin: 0;
+            padding: 0;
+            list-style-type: none;
+        }
+
+        .intro-card li {
+            position: relative;
+            padding-left: 5mm;
+            margin-bottom: 1mm;
+            color: var(--text-medium);
+            font-size: 8.5pt;
+        }
+
+        .intro-card li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1mm;
+            width: 2.5mm;
+            height: 2.5mm;
+            background-color: var(--primary);
+            transform: rotate(45deg);
+        }
+
+        .intro-card p {
+            color: var(--text-medium);
+            margin: 0 0 1mm 0;
+            font-size: 8.5pt;
+            position: relative;
+            z-index: 1;
+        }
+
+        .intro-note {
+            background-color: var(--primary-light);
+            padding: 2.5mm;
+            border-radius: 2mm;
+            margin-top: 2mm;
+            position: relative;
+            z-index: 1;
+        }
+
+        .intro-note p:first-child {
+            color: var(--primary);
+            font-weight: 700;
+            margin: 0 0 0.8mm 0;
+            font-size: 8.5pt;
+        }
+
+        .intro-note p:last-child {
+            color: var(--text-dark);
+            margin: 0;
+            font-size: 8.5pt;
+        }
+
+        .intro-card.questions li::before {
+            content: '';
+            width: 2.5mm;
+            height: 2.5mm;
+            border: 1px solid var(--primary);
+            background: none;
+            transform: rotate(45deg);
+            top: 1mm;
+        }
+
+        .intro-card .numbered-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2mm;
+        }
+
+        .intro-card .numbered-list div {
+            position: relative;
+            padding-left: 5mm;
+            font-size: 8.5pt;
+        }
+
+        .intro-card .numbered-list span {
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Annexure Section Styling */
+        .annexure-section {
+            margin: 12mm 0;
+            border-radius: 4mm;
+            position: relative;
+            break-inside: avoid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .annexure-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .annexure-section .section-heading {
+            text-align: center;
+            margin-bottom: 5mm;
+            position: relative;
+        }
+
+        .annexure-section .section-heading h2 {
+            font-size: 16pt;
+            font-weight: 700;
+            color: var(--text-dark);
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 2mm 0;
+            border-radius: 3mm;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .annexure-container {
+            background: var(--bg-white);
+            border-radius: 3mm;
+            padding: 5mm;
+            margin-bottom: 5mm;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .annexure-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .annexure-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        .annexure-container h3 {
+            font-size: 12pt;
+            color: var(--text-dark);
+            margin: 2mm 0 3mm 0;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .annexure-table-container {
+            overflow-x: auto;
+        }
+
+        .annexure-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 8.5pt;
+            background: var(--bg-white);
+            border-radius: 2mm;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .annexure-table th,
+        .annexure-table td {
+            padding: 2.5mm 3mm;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .annexure-table th {
+            background: linear-gradient(90deg, var(--primary-light), var(--bg-light));
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .annexure-table td {
+            color: var(--text-dark);
+        }
+
+        .annexure-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .annexure-table tr:hover {
+            background-color: var(--primary-light);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header style="margin-top: 65mm; display: flex; flex-direction: column; align-items: center;">
+            <img src="<%= successDriversLogo %>" alt="Success Drivers Logo" class="logo" style="max-height: 130mm; margin-bottom: 5mm;" />
+            <h1><%= reportTitle %></h1>
+            <p style="color: var(--text-medium); font-size: 10pt;">For: <span style="font-weight: 700; color: var(--primary);"><%= fileName %></span></p>
+        </header>
+
+        <div class="force-page-break"></div>
+
+        <div class="introduction-section">
+            <div class="intro-heading">
+                <h2>About This Report</h2>
+            </div>
+
+            <div class="intro-card">
+                <h3>What is this Report About?</h3>
+                <p>This report presents a comprehensive <%= reportTitle %> feedback summary for you. It includes
+                    perspectives from your manager, peers, direct reports, and your own self-assessment across ACT's
+                    Success Drivers.</p>
+                <p>Each Success Driver reflects competencies essential for leaders at ACT:</p>
+                <ul>
+                    <li>Building a Trustful Environment</li>
+                    <li>Building an Engaged Team</li>
+                    <li>Be Passionate About The Customer</li>
+                    <li>Delivers Great Results</li>
+                    <li>Stay Adaptable & Agile</li>
+                    <li>Lead Into The Future</li>
+                </ul>
+            </div>
+
+            <div class="intro-card">
+                <h3>Why is this Important?</h3>
+                <p>This feedback is intended to:</p>
+                <ul>
+                    <li>Build self-awareness of how others perceive your leadership behaviors</li>
+                    <li>Highlight strengths to be leveraged further</li>
+                    <li>Identify development areas to support your growth as a leader</li>
+                    <li>Enable focused development planning aligned with ACT's leadership expectations</li>
+                </ul>
+            </div>
+
+            <div class="intro-card">
+                <h3>How to Read this Report</h3>
+                <div class="numbered-list">
+                    <div>
+                        <span>1.</span>
+                        <p>Scores are averaged across each rater group, and rolled up into an overall score per Success
+                            Driver.</p>
+                    </div>
+                    <div>
+                        <span>2.</span>
+                        <p>Benchmarking indicates how your score compares to others at your level.</p>
+                    </div>
+                    <div>
+                        <span>3.</span>
+                        <p>Metric breakdowns give insight into specific behaviors that comprise each competency.</p>
+                    </div>
+                    <div>
+                        <span>4.</span>
+                        <p>The strengths & development areas section highlights your top strengths and improvement
+                            areas.</p>
+                    </div>
+                </div>
+                <div class="intro-note">
+                    <p>Important Note:</p>
+                    <p>This is not a performance rating. This is developmental feedback meant to help you become a
+                        stronger, more impactful leader.</p>
+                </div>
+            </div>
+
+            <div class="intro-card">
+                <h3>How Should You Use It?</h3>
+                <ul>
+                    <li>Reflect on the gaps between self-perception and others' feedback</li>
+                    <li>Double down on what's working well</li>
+                    <li>Set concrete development goals based on improvement areas</li>
+                    <li>Discuss this report with your leader or HR partner</li>
+                </ul>
+            </div>
+
+            <div class="intro-card questions">
+                <h3>Questions to Keep in Mind</h3>
+                <ul>
+                    <li>Where do others see me differently than I see myself?</li>
+                    <li>Are there consistent patterns across multiple rater groups?</li>
+                    <li>Which behaviors are critical for my current or next role?</li>
+                    <li>What small shifts can create greater impact tomorrow?</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="force-page-break"></div>
+
+        <% Object.entries(data).forEach(([key, item]) => { %>
+        <div class="competency-section">
+            <div class="competency-heading-group">
+                <h2><%= key %></h2>
+                <p class="competency-description" style="margin-bottom: 4mm; color: var(--text-medium);">
+                    <%= item.description %>
+                </p>
+                <div class="section-wrapper">
+                    <h3>Overall Scores</h3>
+                    <div class="score-grid">
+                        <div class="score-card">
+                            Self Score<div class="value"><%= item.scores.self_score %></div>
+                        </div>
+                        <div class="score-card">
+                            Peer Score<div class="value"><%= item.scores.peer_score %></div>
+                        </div>
+                        <div class="score-card">
+                            Reportee Score<div class="value"><%= item.scores.reportee_score %></div>
+                        </div>
+                        <div class="score-card">
+                            Manager Score<div class="value"><%= item.scores.manager_score %></div>
+                        </div>
+                        <div class="score-card overall-score">
+                            Overall Score<div class="value"><%= item.scores.overall_score %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-break-point"></div>
+
+            <div class="benchmark-container">
+                <h3>Level-Wise Benchmarking</h3>
+                <div class="benchmark-label">
+                    <span>Below Average</span>
+                    <span>Average</span>
+                    <span>Above Average</span>
+                </div>
+                <div class="benchmark-bar">
+                    <div class="benchmark-fill" style="width: <%= item.scores.peer_benchmark_percentage %>%;"></div>
+                </div>
+                <div style="text-align: right; margin-top: 1.2mm; font-weight: 700; color: var(--primary);">
+                    <%= item.scores.peer_benchmark_percentage %>% (<%= item.scores.peer_benchmark_text %>)
+                </div>
+            </div>
+
+            <div class="page-break-point"></div>
+
+            <div class="metric-table-container">
+                <h3>Metrics Breakdown</h3>
+                <table class="metric-table">
+                    <thead>
+                        <tr>
+                            <th>Metric Description</th>
+                            <th>Peer</th>
+                            <th>Reportee</th>
+                            <th>Manager</th>
+                            <th>Overall Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% item.metrics.forEach(metric => { %>
+                        <tr>
+                            <td><%= metric.description %></td>
+                            <td><%= metric.peer %></td>
+                            <td><%= metric.reportee %></td>
+                            <td><%= metric.manager %></td>
+                            <td><%= metric.overall_score %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-break-point"></div>
+
+            <div class="chart-container">
+                <canvas id="<%= key %>-chart"></canvas>
+            </div>
+
+            <div class="page-break-point"></div>
+        </div>
+        <% }); %>
+
+        <div class="force-page-break"></div>
+
+        <!-- Redesigned Radar Chart Section -->
+        <div class="radar-chart-section">
+            <div class="section-heading">
+                <h2>Comparative Overview</h2>
+            </div>
+            <div class="radar-chart-container">
+                <canvas id="radar-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="force-page-break"></div>
+
+        <!-- Redesigned Summary Section -->
+        <div class="summary-section">
+            <div class="section-heading">
+                <h2>Insights</h2>
+            </div>
+            <div class="intro-text">
+                <p>This section distills key insights from your <%= reportTitle %> feedback, highlighting your core
+                    strengths and opportunities for growth to guide your leadership development.</p>
+            </div>
+            <div class="summary-container">
+                <h3>Key Strengths</h3>
+                <div class="summary-table-container">
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Strength</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% strengths.forEach(strength => { %>
+                            <tr>
+                                <td><%= strength.description %></td>
+                                <td class="score"><%= strength.overall_score %></td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="summary-container">
+                <h3>Developmental Areas</h3>
+                <div class="summary-table-container">
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Area</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% weaknesses.forEach(weakness => { %>
+                            <tr>
+                                <td><%= weakness.description %></td>
+                                <td class="score"><%= weakness.overall_score %></td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="force-page-break"></div>
+
+        <!-- Annexure Section -->
+        <div class="annexure-section">
+            <div class="section-heading">
+                <h2>Qualitative feedback</h2>
+            </div>
+            <div class="intro-text">
+                <p>This section provides detailed responses to open-ended questions from your <%= reportTitle %> feedback,
+                    categorized by question and respondent role.</p>
+            </div>
+            <% Object.entries(annexureData).forEach(([key, items]) => { %>
+            <div class="annexure-container">
+                <h3><%= key %></h3>
+                <div class="annexure-table-container">
+                    <table class="annexure-table">
+                        <thead>
+                            <tr>
+                                <th>Answer</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% items.forEach(item => { %>
+                            <tr>
+                                <td><%= item.answer %></td>
+                                <td><%= item.role %></td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+
+        <div class="footer">
+            <p>Generated on: <span id="currentDate"></span></p>
+        </div>
+    </div>
+
+    <script>
+        if (document.getElementById('currentDate')) {
+            const date = new Date();
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            document.getElementById('currentDate').innerText = `${day}/${month}/${year}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            Chart.defaults.font.family = "'Space Mono', monospace";
+            window.chartsReady = false;
+
+            setTimeout(() => {
+                <%- chartScript %>
+                <%- radarChartScript %>
+                window.chartsReady = true;
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>
