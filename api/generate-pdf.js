@@ -21,6 +21,11 @@ module.exports = async (req, res) => {
       radarChartScript: ''
     });
 
+    const executablePath = await chromium.executablePath;
+
+if (!executablePath) {
+  throw new Error('No Chrome executable found by chrome-aws-lambda.');
+}
     const browser = await puppeteer.launch({
       args: chromium.args,
       executablePath: await chromium.executablePath,
