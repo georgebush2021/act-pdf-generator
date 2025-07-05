@@ -1,5 +1,5 @@
-
-const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 const ejs = require('ejs');
 const fs = require('fs');
 const path = require('path');
@@ -7,9 +7,9 @@ const path = require('path');
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  const payload = req.body;
-
   try {
+    const payload = req.body;
+
     const templatePath = path.join(__dirname, '..', 'template.ejs');
     const template = fs.readFileSync(templatePath, 'utf-8');
 
@@ -22,7 +22,9 @@ module.exports = async (req, res) => {
     });
 
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox']
+      args: chromium.args,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless
     });
 
     const page = await browser.newPage();
@@ -32,7 +34,7 @@ module.exports = async (req, res) => {
     await browser.close();
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename=report.pdf');
+     res.setHeader('Content-Disposition', 'inline; filename=report.pdf');
     res.end(pdfBuffer);
   } catch (err) {
     console.error(err);
