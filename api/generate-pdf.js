@@ -1,5 +1,4 @@
-const chromium = require('chrome-aws-lambda');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 const fs = require('fs');
 const path = require('path');
@@ -21,17 +20,12 @@ module.exports = async (req, res) => {
       radarChartScript: ''
     });
 
-    const executablePath = await chromium.executablePath;
-
-if (!executablePath) {
-  throw new Error('No Chrome executable found by chrome-aws-lambda.');
-}
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless
-    });
-
+    // const browser = await puppeteer.launch({
+    //   args: chromium.args,
+    //   executablePath: await chromium.executablePath,
+    //   headless: chromium.headless
+    // });
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
