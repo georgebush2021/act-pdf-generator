@@ -1,9 +1,11 @@
 {
   "name": "act-pdf-generator",
   "version": "1.0.0",
+  "scripts": {
+    "postinstall": "npx puppeteer browsers install chrome"
+  },
   "dependencies": {
     "ejs": "^3.1.9",
-    "puppeteer-core": "^10.1.0",
-    "chrome-aws-lambda": "^10.1.0"
+    "puppeteer": "^22.8.2"
   }
 }
