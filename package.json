@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "ejs": "^3.1.9",
-    "puppeteer-core": "^22.8.2",
+    "puppeteer-core": "^10.1.0",
     "chrome-aws-lambda": "^10.1.0"
   }
 }
