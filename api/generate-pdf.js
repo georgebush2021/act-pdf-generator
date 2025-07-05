@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
 
   try {
     const payload = req.body;
-
+// testing puppetteer
     const templatePath = path.join(__dirname, '..', 'template.ejs');
     const template = fs.readFileSync(templatePath, 'utf-8');
 
